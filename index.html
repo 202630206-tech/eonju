@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>고민픽(GominPick) - 함께 나누는 솔루션 커뮤니티</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- JS Confetti (폭죽 효과) -->
+  <script src="https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js"></script>
+  <!-- Pretendard 웹폰트 -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <!-- 커스텀 스타일시트 연결 -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-100/70 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-teal-500 selection:text-white">
+
+  <!-- 1. 프로필 설정 / 수정 모달 -->
+  <div id="profileModal" class="fixed inset-0 bg-slate-950/40 backdrop-blur-md flex items-center justify-center z-50 hidden transition-opacity">
+    <div class="bg-white/95 backdrop-blur-xl rounded-3xl p-6 sm:p-7 w-full max-w-md shadow-2xl border border-white/60 m-4 relative overflow-hidden">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <h2 id="modalTitle" class="text-xl font-bold text-slate-900 tracking-tight">🎯 고민픽 프로필</h2>
+          <p class="text-xs text-slate-500 mt-1">커뮤니티에서 활동할 닉네임과 아이콘을 설정하세요.</p>
+        </div>
+        <button id="closeProfileBtn" onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-600 text-lg p-1 rounded-full hover:bg-slate-100 transition-colors hidden">&times;</button>
+      </div>
+      
+      <form id="profileForm" onsubmit="handleSaveProfile(event)" class="space-y-5">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-2">프로필 이미지</label>
+          <div class="flex items-center space-x-4 mb-4 bg-slate-50/80 p-3 rounded-2xl border border-slate-100">
+            <div id="avatarPreview" class="w-16 h-16 rounded-2xl bg-teal-50 flex items-center justify-center text-3xl overflow-hidden border-2 border-teal-500/30 shadow-inner shrink-0">
+              🦊
+            </div>
+            <div class="flex-1 space-y-1">
+              <label class="block text-[11px] font-semibold text-slate-600">내 이미지 파일 업로드</label>
+              <input type="file" id="avatarFileInput" accept="image/*" onchange="handleFileUpload(event)" class="text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-teal-600 file:text-white hover:file:bg-teal-700 cursor-pointer">
+            </div>
+          </div>
+          
+          <p class="text-[11px] text-slate-400 mb-2">또는 프리셋 아이콘 선택:</p>
+          <div class="grid grid-cols-5 gap-2">
+            <button type="button" onclick="selectPresetAvatar('🦊')" class="p-2.5 rounded-2xl border border-slate-200/80 hover:border-teal-500 text-2xl bg-white hover:bg-teal-50/50 hover:scale-105 transition-all shadow-sm">🦊</button>
+            <button type="button" onclick="selectPresetAvatar('🐶')" class="p-2.5 rounded-2xl border border-slate-200/80 hover:border-teal-500 text-2xl bg-white hover:bg-teal-50/50 hover:scale-105 transition-all shadow-sm">🐶</button>
+            <button type="button" onclick="selectPresetAvatar('🐱')" class="p-2.5 rounded-2xl border border-slate-200/80 hover:border-teal-500 text-2xl bg-white hover:bg-teal-50/50 hover:scale-105 transition-all shadow-sm">🐱</button>
+            <button type="button" onclick="selectPresetAvatar('🐼')" class="p-2.5 rounded-2xl border border-slate-200/80 hover:border-teal-500 text-2xl bg-white hover:bg-teal-50/50 hover:scale-105 transition-all shadow-sm">🐼</button>
+            <button type="button" onclick="selectPresetAvatar('🤖')" class="p-2.5 rounded-2xl border border-slate-200/80 hover:border-teal-500 text-2xl bg-white hover:bg-teal-50/50 hover:scale-105 transition-all shadow-sm">🤖</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1.5">닉네임</label>
+          <input type="text" id="nicknameInput" placeholder="닉네임 입력 (최대 10자)" maxlength="10" required
+            class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/50 text-sm bg-slate-50/50 focus:bg-white transition-all">
+        </div>
+
+        <div class="pt-2">
+          <button type="submit" class="w-full bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white font-bold py-3 rounded-2xl transition-all text-sm shadow-md shadow-teal-600/20 active:scale-[0.98]">
+            저장하고 시작하기
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. 실시간 알림 센터 모달 -->
+  <div id="notificationModal" class="fixed inset-0 bg-slate-950/40 backdrop-blur-md flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-3xl p-6 w-full max-w-lg shadow-2xl border border-slate-100 m-4 max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+          <span class="w-8 h-8 rounded-xl bg-teal-50 flex items-center justify-center text-teal-600 text-sm">🔔</span> 알림 센터
+        </h2>
+        <button onclick="toggleNotificationModal()" class="w-8 h-8 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors">&times;</button>
+      </div>
+
+      <div id="batchClaimBanner" class="mt-4"></div>
+      <div id="notificationList" class="overflow-y-auto my-3 space-y-3 flex-1 pr-1 custom-scrollbar"></div>
+
+      <div class="pt-3 text-right border-t border-slate-100">
+        <button onclick="toggleNotificationModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-xl text-xs font-semibold transition-colors">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 포인트 수령 축하 모달 -->
+  <div id="claimSuccessModal" class="fixed inset-0 bg-slate-950/50 backdrop-blur-md flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-sm text-center shadow-2xl border border-slate-100 m-4 relative overflow-hidden">
+      <div class="w-16 h-16 bg-teal-50 text-3xl rounded-3xl flex items-center justify-center mx-auto mb-4 border border-teal-100 shadow-sm">
+        🎉
+      </div>
+      <h3 class="text-xl font-extrabold text-slate-900 mb-1">포인트 수령 완료!</h3>
+      <p class="text-xs text-slate-500 mb-6 leading-relaxed">
+        채택되어 누적된 포인트<br>
+        <strong id="claimedPointsText" class="text-teal-600 text-lg font-black">100pt</strong>가 계정에 저장되었습니다!
+      </p>
+      <button onclick="closeClaimModal()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-2xl text-sm transition-all shadow-md active:scale-[0.98]">
+        확인
+      </button>
+    </div>
+  </div>
+
+  <!-- 4. 개발자 인증 모달 -->
+  <div id="devAuthModal" class="fixed inset-0 bg-slate-950/50 backdrop-blur-md flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl border border-slate-100 m-4 space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-base font-bold text-slate-900 flex items-center gap-2">
+          <span>💻</span> 개발자 인증
+        </h2>
+        <button onclick="closeDevModal()" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
+      </div>
+      <p class="text-xs text-slate-500">개발자 비밀번호를 입력하면 모든 사람의 고민과 댓글을 관리/삭제할 수 있는 최고 권한이 부여됩니다.</p>
+      <form onsubmit="handleDevLogin(event)" class="space-y-3">
+        <input type="password" id="devPasswordInput" placeholder="비밀번호 입력" required
+          class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-xs bg-slate-50">
+        <div class="flex justify-end gap-2 pt-1">
+          <button type="button" onclick="closeDevModal()" class="px-4 py-2.5 rounded-2xl text-xs font-semibold text-slate-500 bg-slate-100 hover:bg-slate-200">취소</button>
+          <button type="submit" class="px-4 py-2.5 rounded-2xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 shadow-sm">인증하기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- GominPick 헤더 바 -->
+  <header class="glass-effect sticky top-0 z-40 border-b border-slate-200/60 shadow-sm">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      
+      <!-- 로고 브랜드 -->
+      <div class="flex items-center space-x-2.5 cursor-pointer group" onclick="navigateTo('lobby')">
+        <div class="w-9 h-9 bg-gradient-to-tr from-teal-600 to-emerald-500 text-white rounded-2xl flex items-center justify-center font-black text-lg shadow-md shadow-teal-500/20 group-hover:scale-105 transition-transform">
+          P
+        </div>
+        <div>
+          <h1 class="text-base font-black text-slate-900 tracking-tight leading-none">고민픽</h1>
+          <span class="text-[9px] text-teal-600 font-extrabold tracking-widest block mt-0.5">GOMIN PICK</span>
+        </div>
+      </div>
+      
+      <!-- 탭, 알림, 프로필, 개발자 버튼 -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <div class="flex bg-slate-200/60 p-1 rounded-2xl border border-slate-200/40">
+          <button id="tabLobbyBtn" onclick="navigateTo('lobby')" class="px-3 py-1.5 text-xs font-bold rounded-xl bg-white text-slate-900 shadow-sm transition-all">🏠 로비</button>
+          <button id="tabFeedBtn" onclick="navigateTo('feed')" class="px-3 py-1.5 text-xs font-semibold rounded-xl text-slate-500 hover:text-slate-900 transition-all">📋 고민 피드</button>
+          <button id="tabRankBtn" onclick="navigateTo('ranking')" class="px-3 py-1.5 text-xs font-semibold rounded-xl text-slate-500 hover:text-slate-900 transition-all">🏆 랭킹</button>
+        </div>
+
+        <button id="devAuthBtn" onclick="toggleDevMode()" class="px-2.5 py-1.5 rounded-2xl text-xs font-extrabold transition-all border border-slate-200/80 bg-white text-slate-600 hover:bg-slate-50">
+          💻 개발자
+        </button>
+
+        <button onclick="toggleNotificationModal()" class="relative w-9 h-9 rounded-2xl bg-slate-100 hover:bg-slate-200/80 text-slate-600 flex items-center justify-center transition-all border border-slate-200/60">
+          <span class="text-sm">🔔</span>
+          <span id="notifBadge" class="absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-sm hidden">0</span>
+        </button>
+
+        <button onclick="openProfileModal(true)" class="flex items-center space-x-2 bg-white hover:bg-teal-50/50 border border-slate-200/80 px-2.5 py-1 rounded-2xl transition-all shadow-sm">
+          <div id="headerAvatar" class="w-7 h-7 rounded-xl bg-teal-50 flex items-center justify-center text-sm overflow-hidden border border-teal-200">🦊</div>
+          <div class="hidden sm:block text-left">
+            <div id="headerNickname" class="text-xs font-bold text-slate-800 leading-tight">-</div>
+            <div id="headerPoints" class="text-[10px] font-black text-teal-600 leading-tight">0 pt</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 영역 -->
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 py-8 flex-grow w-full">
+    
+    <!-- 1. 🏠 로비 탭 -->
+    <section id="lobbySection" class="space-y-6">
+      <div class="relative bg-gradient-to-tr from-slate-900 via-teal-950 to-emerald-900 text-white rounded-3xl p-7 sm:p-9 shadow-xl overflow-hidden border border-teal-500/20">
+        <div class="absolute -right-10 -top-10 w-48 h-48 bg-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="relative z-10 space-y-3">
+          <span class="inline-flex items-center gap-1.5 bg-teal-500/20 text-teal-300 border border-teal-500/30 text-[11px] px-3 py-1 rounded-full font-bold backdrop-blur-md">
+            <span>✨</span> 고민 해결 솔루션 커뮤니티
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-black tracking-tight leading-snug">
+            마음 속 고민을 나누고,<br class="hidden sm:inline"> 명쾌한 솔루션을 Pick하세요!
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-300 max-w-md leading-relaxed">
+            나의 경험과 지혜로 사람들의 고민을 풀어주고 채택되면 포인트 적립 혜택을 받을 수 있습니다.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3 bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-sm text-center">
+        <div class="space-y-0.5">
+          <span class="text-[10px] font-bold text-slate-400 block">등록된 총 고민</span>
+          <strong id="statTotalPosts" class="text-base sm:text-lg font-black text-slate-800">0</strong>
+        </div>
+        <div class="space-y-0.5 border-x border-slate-100">
+          <span class="text-[10px] font-bold text-slate-400 block">해결 완료된 고민</span>
+          <strong id="statSolvedPosts" class="text-base sm:text-lg font-black text-teal-600">0</strong>
+        </div>
+        <div class="space-y-0.5">
+          <span class="text-[10px] font-bold text-slate-400 block">해결률</span>
+          <strong id="statSolveRate" class="text-base sm:text-lg font-black text-emerald-600">0%</strong>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div onclick="goToCreatePost()" class="group bg-white p-6 rounded-3xl border border-slate-200/80 hover:border-teal-500/60 shadow-sm hover:shadow-xl hover:shadow-teal-500/5 transition-all cursor-pointer flex flex-col justify-between space-y-5">
+          <div class="space-y-3">
+            <div class="w-12 h-12 bg-teal-50 text-teal-600 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform border border-teal-100">✍️</div>
+            <div>
+              <h3 class="text-base font-bold text-slate-900">고민 등록하기</h3>
+              <p class="text-xs text-slate-500 mt-1 leading-relaxed">일상, 연애, 진로 고민을 등록하고 집단 지성의 솔루션을 경험해보세요.</p>
+            </div>
+          </div>
+          <div class="flex items-center text-xs font-bold text-teal-600 group-hover:translate-x-1 transition-transform">
+            고민 작성하러 가기 &rarr;
+          </div>
+        </div>
+
+        <div onclick="goToSolvePost()" class="group bg-white p-6 rounded-3xl border border-slate-200/80 hover:border-indigo-500/60 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 transition-all cursor-pointer flex flex-col justify-between space-y-5">
+          <div class="space-y-3">
+            <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform border border-indigo-100">💡</div>
+            <div>
+              <h3 class="text-base font-bold text-slate-900">고민 해결해주기</h3>
+              <p class="text-xs text-slate-500 mt-1 leading-relaxed">답변을 기다리는 고민들에 나만의 솔루션을 달고 최고의 의견으로 채택되세요!</p>
+            </div>
+          </div>
+          <div class="flex items-center text-xs font-bold text-indigo-600 group-hover:translate-x-1 transition-transform">
+            답변 필요한 고민 보기 &rarr;
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <span>🔥</span> 최근 들어온 고민들
+          </h3>
+          <button onclick="navigateTo('feed')" class="text-xs text-teal-600 hover:text-teal-700 hover:underline font-bold">전체보기 &rarr;</button>
+        </div>
+        <div id="lobbyPostsPreview" class="space-y-2.5"></div>
+      </div>
+    </section>
+
+    <!-- 2. 📋 고민 피드 탭 -->
+    <section id="feedSection" class="space-y-6 hidden">
+      
+      <div class="flex items-center justify-between bg-white px-5 py-3.5 rounded-2xl border border-slate-200/80 shadow-sm">
+        <button onclick="history.back()" class="flex items-center gap-2 text-slate-700 hover:text-teal-600 font-bold text-xs transition-colors bg-slate-100 hover:bg-teal-50 px-3 py-1.5 rounded-xl border border-slate-200/60">
+          <span class="text-sm">←</span> 뒤로가기
+        </button>
+        <span class="text-xs font-bold text-slate-500">📋 고민 피드</span>
+      </div>
+
+      <div id="createPostCard" class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200/80 space-y-4">
+        <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+          <span class="w-6 h-6 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600 text-xs">✏️</span> 새로운 고민 작성
+        </h2>
+        <form onsubmit="handleCreatePost(event)" class="space-y-3">
+          <div class="flex gap-2">
+            <select id="postCategory" required class="px-3 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/50 text-xs bg-slate-50/50 font-bold text-slate-700">
+              <option value="연애/인간관계">❤️ 연애/인간관계</option>
+              <option value="진로/학업">🎓 진로/학업</option>
+              <option value="일상/취미">☕ 일상/취미</option>
+              <option value="직장/알바">💼 직장/알바</option>
+              <option value="기타" selected>💭 기타 고민</option>
+            </select>
+            <input type="text" id="postTitle" placeholder="고민을 한 줄로 요약해 주세요." required
+              class="flex-1 px-4 py-2.5 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/50 text-xs bg-slate-50/50 focus:bg-white transition-all">
+          </div>
+
+          <textarea id="postContent" placeholder="자세한 상황이나 고민 내용을 자유롭게 적어주세요." rows="3" required
+            class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/50 text-xs bg-slate-50/50 focus:bg-white transition-all resize-none"></textarea>
+          
+          <div class="flex justify-end">
+            <button type="submit" class="bg-slate-900 hover:bg-slate-800 text-white font-bold px-5 py-2.5 rounded-2xl text-xs transition-all shadow-sm active:scale-[0.98]">
+              고민 등록하기
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div class="space-y-3">
+        <div class="relative">
+          <input type="text" id="searchInput" oninput="renderPosts()" placeholder="🔍 고민 제목 또는 내용 검색..."
+            class="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200/80 focus:outline-none focus:ring-2 focus:ring-teal-500/50 text-xs bg-white shadow-sm transition-all">
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap gap-1 bg-slate-200/60 p-1 rounded-2xl border border-slate-200/40 text-xs">
+            <button id="filterAllBtn" onclick="setFeedFilter('all')" class="px-3 py-1 rounded-xl bg-white font-bold text-slate-900 shadow-sm">전체</button>
+            <button id="filterUnsolvedBtn" onclick="setFeedFilter('unsolved')" class="px-3 py-1 rounded-xl text-slate-600 font-medium hover:text-slate-900">💡 답변 필요</button>
+            <button id="filterMyPostsBtn" onclick="setFeedFilter('myPosts')" class="px-3 py-1 rounded-xl text-slate-600 font-medium hover:text-slate-900">✏️ 내 고민</button>
+            <button id="filterMyCommentsBtn" onclick="setFeedFilter('myComments')" class="px-3 py-1 rounded-xl text-slate-600 font-medium hover:text-slate-900">💬 내 답변</button>
+          </div>
+
+          <select id="categoryFilter" onchange="renderPosts()" class="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-semibold bg-white text-slate-700">
+            <option value="ALL">전체 카테고리</option>
+            <option value="연애/인간관계">❤️ 연애/인간관계</option>
+            <option value="진로/학업">🎓 진로/학업</option>
+            <option value="일상/취미">☕ 일상/취미</option>
+            <option value="직장/알바">💼 직장/알바</option>
+            <option value="기타">💭 기타 고민</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="postsList" class="space-y-4"></div>
+    </section>
+
+    <!-- 3. 🏆 랭킹 탭 -->
+    <section id="rankingSection" class="space-y-6 hidden">
+      <div class="flex items-center justify-between bg-white px-5 py-3.5 rounded-2xl border border-slate-200/80 shadow-sm">
+        <button onclick="history.back()" class="flex items-center gap-2 text-slate-700 hover:text-teal-600 font-bold text-xs transition-colors bg-slate-100 hover:bg-teal-50 px-3 py-1.5 rounded-xl border border-slate-200/60">
+          <span class="text-sm">←</span> 뒤로가기
+        </button>
+        <span class="text-xs font-bold text-slate-500">🏆 포인트 랭킹</span>
+      </div>
+
+      <div class="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80">
+        <div class="mb-6">
+          <h2 class="text-lg font-bold text-slate-900">🏆 고민픽 포인트 랭킹</h2>
+          <p class="text-xs text-slate-500 mt-1">답변 채택으로 명쾌한 솔루션을 제공한 열린 유저들의 순위입니다.</p>
+        </div>
+        <div id="rankingList" class="space-y-2.5"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 자바스크립트 로직 파일 연결 -->
+  <script src="script.js"></script>
+</body>
+</html>
